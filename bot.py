@@ -134,6 +134,9 @@ async def help_weapon_command(interaction: discord.Interaction):
     embed.add_field(name="🔫 /generate", value=f"Achète une arme aléatoire (Coût: {PRIX_GENERATE} coins)", inline=False)
     embed.add_field(name="🤝 /sell_last", value="Vend ta dernière arme pour récupérer de l'argent", inline=False)
     embed.add_field(name="🎒 /show_collection", value="Affiche ton inventaire", inline=False)
+    # >>> Mise à jour de l'aide <<<
+    embed.add_field(name="🏆 /weapon-classement", value="Affiche le TOP 10 des collectionneurs", inline=False)
+    
     await interaction.response.send_message(embed=embed)
 
 @tree_commands.command(name="generate", description=f"Achète une arme aléatoire ({PRIX_GENERATE} coins)")
@@ -210,6 +213,50 @@ async def show_collection_command(interaction: discord.Interaction):
         
     await interaction.response.send_message(embed=embed)
 
+
+# --- NOUVELLE COMMANDE : CLASSEMENT ---
+@tree_commands.command(name="weapon-classement", description="Affiche le classement des joueurs par nombre d'armes")
+async def weapon_classement_command(interaction: discord.Interaction):
+    
+    # 1. On crée une liste vide pour stocker les résultats
+    classement = []
+
+    # 2. On parcourt tous les joueurs dans la base de données
+    for user_id, data in user_collections.items():
+        nb_armes = len(data["inventory"]) # On compte les armes
+        
+        # On ne classe que ceux qui ont au moins 1 arme
+        if nb_armes > 0:
+            classement.append((user_id, nb_armes))
+
+    # 3. S'il n'y a personne
+    if not classement:
+        await interaction.response.send_message("Le classement est vide pour le moment !")
+        return
+
+    # 4. On trie la liste du plus grand au plus petit (reverse=True)
+    # x[1] signifie qu'on trie selon le 2ème élément (le nombre d'armes)
+    classement.sort(key=lambda x: x[1], reverse=True)
+
+    # 5. On prend seulement les 10 premiers (Top 10)
+    top_10 = classement[:10]
+
+    # 6. On crée le message
+    description_msg = ""
+    for index, (uid, score) in enumerate(top_10, start=1):
+        # Petites médailles pour le podium
+        medaille = f"**#{index}**"
+        if index == 1: medaille = "🥇"
+        elif index == 2: medaille = "🥈"
+        elif index == 3: medaille = "🥉"
+
+        # <@ID> permet de mentionner le joueur proprement
+        description_msg += f"{medaille} <@{uid}> : **{score} armes**\n"
+
+    embed = discord.Embed(title="🏆 Classement des Collectionneurs", description=description_msg, color=discord.Color.gold())
+    await interaction.response.send_message(embed=embed)
+
+
 # --- GESTION DES ERREURS ---
 @tree_commands.error
 async def on_app_command_error(interaction: discord.Interaction, error: app_commands.AppCommandError):
@@ -227,19 +274,16 @@ async def on_app_command_error(interaction: discord.Interaction, error: app_comm
 
 # --- EVENTS (BIENVENUE) ---
 
-# >>> PARTIE AJOUTÉE POUR LE MESSAGE DE BIENVENUE <<<
 @client.event
 async def on_member_join(member: discord.Member):
     print(f"Nouveau membre détecté : {member.name}")
     
-    # 1. ENVOI EN MESSAGE PRIVÉ (DM)
     try:
         await member.send(f"Bienvenue sur le serveur {member.guild.name} ! 🎮\nSi tu as besoin d'aide ou si tu veux commencer à jouer, tape la commande **/help_weapon**.")
     except:
         print(f"Impossible d'envoyer un DM à {member.name} (bloqué)")
 
-    # 2. ENVOI SUR UN SALON SPÉCIFIQUE (OPTIONNEL MAIS CONSEILLÉ)
-    # Remplace les 00000 ci-dessous par l'ID de ton salon "Général" ou "Bienvenue"
+    # ID du salon Bienvenue
     ID_SALON_BIENVENUE = 1445360670395596922
     
     try:
@@ -254,6 +298,6 @@ async def on_member_join(member: discord.Member):
 async def on_ready():
     await tree_commands.sync()
     print(f'lancement du bot {client.user}')
-    print("Système économique et Bienvenue chargés !")
+    print("Système complet chargé !")
 
 client.run(os.getenv('DISCORD_TOKEN'))

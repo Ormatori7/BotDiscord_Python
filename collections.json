@@ -1,12 +1,18 @@
 {
     "1249482726667456572": {
-        "coins": 41,
+        "coins": 46,
         "inventory": [
             {
-                "name": "M4A1",
-                "image": "https://upload.wikimedia.org/wikipedia/commons/4/44/M4A1_ACOG.jpg",
+                "name": "Marteau de Guerre",
+                "image": "https://cdna.artstation.com/p/assets/images/images/014/334/844/large/timothy-ferreira-warhammer-render01.jpg",
                 "rarity": "Commun",
                 "value": 1
+            },
+            {
+                "name": "Marteau de Guerre",
+                "image": "https://cdna.artstation.com/p/assets/images/images/014/334/844/large/timothy-ferreira-warhammer-render01.jpg",
+                "rarity": "Epique",
+                "value": 3
             },
             {
                 "name": "M4A1",
@@ -27,34 +33,46 @@
                 "value": 2
             },
             {
-                "name": "Ray Gun Alien",
-                "image": "https://static.wikia.nocookie.net/callofduty/images/1/19/Ray_Gun_BO4.png",
+                "name": "Katana Laser",
+                "image": "https://i.pinimg.com/originals/4d/75/90/4d75909c95085631567307116075b175.jpg",
+                "rarity": "Rare",
+                "value": 2
+            },
+            {
+                "name": "Desert Eagle",
+                "image": "https://upload.wikimedia.org/wikipedia/commons/5/54/Desert_Eagle_.50_AE.jpg",
+                "rarity": "Commun",
+                "value": 1
+            },
+            {
+                "name": "Katana Laser",
+                "image": "https://i.pinimg.com/originals/4d/75/90/4d75909c95085631567307116075b175.jpg",
                 "rarity": "Commun",
                 "value": 1
             },
             {
                 "name": "Sabre Laser",
                 "image": "https://lumiere-a.akamaihd.net/v1/images/skywalker-lightsaber-main_7b669382.jpeg",
+                "rarity": "Epique",
+                "value": 3
+            },
+            {
+                "name": "Marteau de Guerre",
+                "image": "https://cdna.artstation.com/p/assets/images/images/014/334/844/large/timothy-ferreira-warhammer-render01.jpg",
                 "rarity": "Commun",
                 "value": 1
             },
             {
-                "name": "AK-47",
-                "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/6/65/AK-47_type_II_Part_DM-ST-89-01131.jpg/1200px-AK-47_type_II_Part_DM-ST-89-01131.jpg",
-                "rarity": "Epique",
-                "value": 3
-            },
-            {
-                "name": "AK-47",
-                "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/6/65/AK-47_type_II_Part_DM-ST-89-01131.jpg/1200px-AK-47_type_II_Part_DM-ST-89-01131.jpg",
-                "rarity": "Rare",
-                "value": 2
-            },
-            {
                 "name": "Ray Gun Alien",
                 "image": "https://static.wikia.nocookie.net/callofduty/images/1/19/Ray_Gun_BO4.png",
-                "rarity": "Epique",
-                "value": 3
+                "rarity": "Commun",
+                "value": 1
+            },
+            {
+                "name": "M4A1",
+                "image": "https://upload.wikimedia.org/wikipedia/commons/4/44/M4A1_ACOG.jpg",
+                "rarity": "Commun",
+                "value": 1
             }
         ]
     },

@@ -7,6 +7,7 @@ import discord
 import os
 import json 
 
+# On active les intents pour pouvoir détecter les nouveaux membres
 intents = discord.Intents.all()
 client = discord.Client(intents=intents)
 tree_commands = app_commands.CommandTree(client)
@@ -55,13 +56,10 @@ user_collections = load_data()
 
 def check_user_exists(user_id):
     """Vérifie si le joueur existe, sinon le crée avec 0 coins."""
-    # Si le joueur n'existe pas du tout
     if user_id not in user_collections:
         user_collections[user_id] = {"coins": 0, "inventory": []}
         return
 
-    # MIGRATION : Si le joueur a l'ancien format (une liste au lieu d'un dictionnaire)
-    # On convertit ses données pour ne pas qu'il perde ses armes
     if isinstance(user_collections[user_id], list):
         ancien_inventaire = user_collections[user_id]
         user_collections[user_id] = {"coins": 0, "inventory": ancien_inventaire}
@@ -69,12 +67,11 @@ def check_user_exists(user_id):
 
 # --- COMMANDES ÉCONOMIE ---
 
-# >>> MODIFICATION ICI <<<
 @tree_commands.command(name="daily", description="Récupère 200 pièces chaque minute")
-@app_commands.checks.cooldown(1, 60) # Cooldown de 60 secondes (1 minute)
+@app_commands.checks.cooldown(1, 60)
 async def daily_command(interaction: discord.Interaction):
     user_id = str(interaction.user.id)
-    check_user_exists(user_id) # On s'assure que le joueur est inscrit
+    check_user_exists(user_id)
 
     gain = 200
     user_collections[user_id]["coins"] += gain
@@ -84,12 +81,11 @@ async def daily_command(interaction: discord.Interaction):
     await interaction.response.send_message(embed=embed)
 
 @tree_commands.command(name="work", description="Travaille pour gagner un peu d'argent")
-@app_commands.checks.cooldown(1, 3600) # Cooldown de 1h
+@app_commands.checks.cooldown(1, 3600)
 async def work_command(interaction: discord.Interaction):
     user_id = str(interaction.user.id)
     check_user_exists(user_id)
 
-    # Gain aléatoire entre 20 et 100
     salaire = random.randint(20, 100)
     user_collections[user_id]["coins"] += salaire
     save_data()
@@ -118,11 +114,7 @@ async def sell_last_command(interaction: discord.Interaction):
         await interaction.response.send_message("❌ Tu n'as rien à vendre !")
         return
 
-    # On récupère le dernier objet (pop enlève le dernier élément de la liste)
     objet_vendu = inventaire.pop()
-    
-    # Calcul du prix de vente (Valeur de rareté * 50)
-    # Commun = 50, Rare = 100, Epique = 150, Légendaire = 200
     prix_vente = objet_vendu["value"] * 50
     
     user_collections[user_id]["coins"] += prix_vente
@@ -142,7 +134,6 @@ async def help_weapon_command(interaction: discord.Interaction):
     embed.add_field(name="🔫 /generate", value=f"Achète une arme aléatoire (Coût: {PRIX_GENERATE} coins)", inline=False)
     embed.add_field(name="🤝 /sell_last", value="Vend ta dernière arme pour récupérer de l'argent", inline=False)
     embed.add_field(name="🎒 /show_collection", value="Affiche ton inventaire", inline=False)
-    # ... autres commandes ...
     await interaction.response.send_message(embed=embed)
 
 @tree_commands.command(name="generate", description=f"Achète une arme aléatoire ({PRIX_GENERATE} coins)")
@@ -150,16 +141,13 @@ async def generate_command(interaction: discord.Interaction):
     user_id = str(interaction.user.id) 
     check_user_exists(user_id)
 
-    # 1. Vérifier si le joueur a assez d'argent
     solde_joueur = user_collections[user_id]["coins"]
     if solde_joueur < PRIX_GENERATE:
         await interaction.response.send_message(f"❌ Tu es pauvre ! Il te faut **{PRIX_GENERATE} coins**. Utilise `/daily` ou `/work`.", ephemeral=True)
         return
 
-    # 2. On retire l'argent
     user_collections[user_id]["coins"] -= PRIX_GENERATE
     
-    # 3. Génération de l'arme (comme avant)
     arme_choisie = random.choice(WEAPONS_LIST)
     arme_nom = arme_choisie["nom"]
     arme_image_url = arme_choisie["image"]
@@ -174,10 +162,7 @@ async def generate_command(interaction: discord.Interaction):
         "value": valeur_tri
     }
 
-    # 4. Ajout dans l'inventaire
-    # ATTENTION : On ajoute maintenant dans ["inventory"] car la structure a changé
     user_collections[user_id]["inventory"].append(nouvel_objet)
-
     save_data() 
 
     couleur = discord.Color.blue()
@@ -199,7 +184,6 @@ async def show_collection_command(interaction: discord.Interaction):
     user_id = str(interaction.user.id)
     check_user_exists(user_id)
 
-    # On récupère l'inventaire qui est maintenant DANS la clé "inventory"
     items = user_collections[user_id]["inventory"]
     solde = user_collections[user_id]["coins"]
 
@@ -226,11 +210,10 @@ async def show_collection_command(interaction: discord.Interaction):
         
     await interaction.response.send_message(embed=embed)
 
-# --- GESTION DES ERREURS (Pour le cooldown) ---
+# --- GESTION DES ERREURS ---
 @tree_commands.error
 async def on_app_command_error(interaction: discord.Interaction, error: app_commands.AppCommandError):
     if isinstance(error, app_commands.CommandOnCooldown):
-        # On transforme le temps restant en minutes/heures pour que ce soit lisible
         temps_restant = int(error.retry_after)
         if temps_restant > 3600:
             msg = f"⏳ Doucement ! Reviens dans {temps_restant // 3600} heures."
@@ -238,16 +221,39 @@ async def on_app_command_error(interaction: discord.Interaction, error: app_comm
             msg = f"⏳ Doucement ! Reviens dans {temps_restant // 60} minutes."
         else:
             msg = f"⏳ Doucement ! Reviens dans {temps_restant} secondes."
-        
         await interaction.response.send_message(msg, ephemeral=True)
     else:
         print(f"Erreur : {error}")
 
-# --- EVENTS ---
+# --- EVENTS (BIENVENUE) ---
+
+# >>> PARTIE AJOUTÉE POUR LE MESSAGE DE BIENVENUE <<<
+@client.event
+async def on_member_join(member: discord.Member):
+    print(f"Nouveau membre détecté : {member.name}")
+    
+    # 1. ENVOI EN MESSAGE PRIVÉ (DM)
+    try:
+        await member.send(f"Bienvenue sur le serveur {member.guild.name} ! 🎮\nSi tu as besoin d'aide ou si tu veux commencer à jouer, tape la commande **/help_weapon**.")
+    except:
+        print(f"Impossible d'envoyer un DM à {member.name} (bloqué)")
+
+    # 2. ENVOI SUR UN SALON SPÉCIFIQUE (OPTIONNEL MAIS CONSEILLÉ)
+    # Remplace les 00000 ci-dessous par l'ID de ton salon "Général" ou "Bienvenue"
+    ID_SALON_BIENVENUE = 1445360670395596922
+    
+    try:
+        channel = client.get_channel(ID_SALON_BIENVENUE)
+        if channel:
+            await channel.send(f"Bienvenue {member.mention} ! 👋\nN'hésite pas à taper **/help_weapon** pour découvrir le jeu !")
+    except:
+        print("Erreur: ID de salon invalide ou bot sans permission.")
+
+
 @client.event
 async def on_ready():
     await tree_commands.sync()
     print(f'lancement du bot {client.user}')
-    print("Système économique chargé !")
+    print("Système économique et Bienvenue chargés !")
 
 client.run(os.getenv('DISCORD_TOKEN'))

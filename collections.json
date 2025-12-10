@@ -1,6 +1,6 @@
 {
     "1249482726667456572": {
-        "coins": 201,
+        "coins": 41,
         "inventory": [
             {
                 "name": "M4A1",
@@ -19,6 +19,59 @@
                 "image": "https://cdna.artstation.com/p/assets/images/images/014/334/844/large/timothy-ferreira-warhammer-render01.jpg",
                 "rarity": "Commun",
                 "value": 1
+            },
+            {
+                "name": "Ray Gun Alien",
+                "image": "https://static.wikia.nocookie.net/callofduty/images/1/19/Ray_Gun_BO4.png",
+                "rarity": "Rare",
+                "value": 2
+            },
+            {
+                "name": "Ray Gun Alien",
+                "image": "https://static.wikia.nocookie.net/callofduty/images/1/19/Ray_Gun_BO4.png",
+                "rarity": "Commun",
+                "value": 1
+            },
+            {
+                "name": "Sabre Laser",
+                "image": "https://lumiere-a.akamaihd.net/v1/images/skywalker-lightsaber-main_7b669382.jpeg",
+                "rarity": "Commun",
+                "value": 1
+            },
+            {
+                "name": "AK-47",
+                "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/6/65/AK-47_type_II_Part_DM-ST-89-01131.jpg/1200px-AK-47_type_II_Part_DM-ST-89-01131.jpg",
+                "rarity": "Epique",
+                "value": 3
+            },
+            {
+                "name": "AK-47",
+                "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/6/65/AK-47_type_II_Part_DM-ST-89-01131.jpg/1200px-AK-47_type_II_Part_DM-ST-89-01131.jpg",
+                "rarity": "Rare",
+                "value": 2
+            },
+            {
+                "name": "Ray Gun Alien",
+                "image": "https://static.wikia.nocookie.net/callofduty/images/1/19/Ray_Gun_BO4.png",
+                "rarity": "Epique",
+                "value": 3
+            }
+        ]
+    },
+    "687695487196725288": {
+        "coins": 44,
+        "inventory": [
+            {
+                "name": "AK-47",
+                "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/6/65/AK-47_type_II_Part_DM-ST-89-01131.jpg/1200px-AK-47_type_II_Part_DM-ST-89-01131.jpg",
+                "rarity": "Epique",
+                "value": 3
+            },
+            {
+                "name": "AK-47",
+                "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/6/65/AK-47_type_II_Part_DM-ST-89-01131.jpg/1200px-AK-47_type_II_Part_DM-ST-89-01131.jpg",
+                "rarity": "Rare",
+                "value": 2
             }
         ]
     }

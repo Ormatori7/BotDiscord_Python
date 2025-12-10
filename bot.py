@@ -2,90 +2,252 @@ from dotenv import load_dotenv
 load_dotenv()
 
 from discord import app_commands
-
 import random
 import discord
 import os
+import json 
 
 intents = discord.Intents.all()
 client = discord.Client(intents=intents)
 tree_commands = app_commands.CommandTree(client)
 
-#/sdv pour avoir le lien
-@tree_commands.command(name="sdv", description="Avoir le lien du site supdevinci")
-async def sdv_command(interaction: discord.Interaction):
-    await interaction.response.send_message("https://www.supdevinci.fr")
+# --- DONNÉES DU JEU ---
 
-#/games pour avoir les 5 jeux
-@tree_commands.command(name="games", description="Avoir top 5 jeux")
-async def games_command(interaction: discord.Interaction):
-    embed = discord.Embed(title=("top 5 des jeux"))
-    embed.add_field(name="top1", value="minecraft")
-    embed.add_field(name="top1", value="minecraft")
-    embed.add_field(name="top1", value="minecraft")
-    embed.add_field(name="top1", value="minecraft")
-    embed.add_field(name="top1", value="minecraft")
-    await interaction.response.send_message(embed=embed)
+WEAPONS_LIST = [
+    {"nom": "AK-47", "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/6/65/AK-47_type_II_Part_DM-ST-89-01131.jpg/1200px-AK-47_type_II_Part_DM-ST-89-01131.jpg"},
+    {"nom": "M4A1", "image": "https://upload.wikimedia.org/wikipedia/commons/4/44/M4A1_ACOG.jpg"},
+    {"nom": "Desert Eagle", "image": "https://upload.wikimedia.org/wikipedia/commons/5/54/Desert_Eagle_.50_AE.jpg"},
+    {"nom": "Katana Laser", "image": "https://i.pinimg.com/originals/4d/75/90/4d75909c95085631567307116075b175.jpg"},
+    {"nom": "Marteau de Guerre", "image": "https://cdna.artstation.com/p/assets/images/images/014/334/844/large/timothy-ferreira-warhammer-render01.jpg"},
+    {"nom": "Ray Gun Alien", "image": "https://static.wikia.nocookie.net/callofduty/images/1/19/Ray_Gun_BO4.png"},
+    {"nom": "Sabre Laser", "image": "https://lumiere-a.akamaihd.net/v1/images/skywalker-lightsaber-main_7b669382.jpeg"},
+]
 
-#generateur de meme
-@tree_commands.command(name="meme", description="avoir un meme")
-async def meme_command(interaction: discord.Interaction):
-    memes = [
-        "https://www.dieudogifs.be/thumbs/086372d24b2fad3ac90185181a11699a.jpg"
-        
-            ]
-    meme = random.choice(memes)
-    await interaction.response.send_message(meme)
+RARITIES = {
+    "Commun": 1,
+    "Rare": 2,
+    "Epique": 3,
+    "Légendaire": 4
+}
 
-#ban qlq 
-@tree_commands.command(name="aurevoir", description="dehors")
-async def dehors_command(interaction: discord.Interaction, member: discord.Member):
-    await member.send("son gros crane a lui la!")
-    await member.kick(reason="ton gros crane la")
-    await interaction.response.send_message("arrache ta tete !")
+PRIX_GENERATE = 100  # Coût pour générer une arme
 
-    await interaction.response.send_message("la feinte était tlm puissante qu'il s'est fait ban ")
+# --- SYSTÈME DE SAUVEGARDE (JSON) ---
 
+FILE_NAME = "collections.json"
 
-@client.event
-async def on_ready():
-    await tree_commands.sync() #synchronise les commandes avec le serveur discord
-    print(f'lancement du bot {client.user}')
+def save_data():
+    """Sauvegarde les données."""
+    with open(FILE_NAME, "w") as f:
+        json.dump(user_collections, f, indent=4)
 
+def load_data():
+    """Charge les données."""
+    try:
+        with open(FILE_NAME, "r") as f:
+            return json.load(f)
+    except FileNotFoundError:
+        return {}
 
-@client.event
-async def on_member_join(member: discord.Member):
-    print("nouveau membre a rejoint le discord")
-    #envoyer un mesg dans le salon #nouveau membre
-    member_channel = client.get_channel(1445360670395596922)
-    await member_channel.send("nouveau membre sur le serv")
+user_collections = load_data()
 
-    #envoyer un dm
-    await member.send("bienvenue sur le serveur")
+# --- FONCTION UTILITAIRE ---
 
-@client.event
-async def on_message(message):
-    if message.author == client.user:
+def check_user_exists(user_id):
+    """Vérifie si le joueur existe, sinon le crée avec 0 coins."""
+    # Si le joueur n'existe pas du tout
+    if user_id not in user_collections:
+        user_collections[user_id] = {"coins": 0, "inventory": []}
         return
 
-    if message.content.startswith('$trkl?'):
-        await message.channel.send('Oh bieng!')
+    # MIGRATION : Si le joueur a l'ancien format (une liste au lieu d'un dictionnaire)
+    # On convertit ses données pour ne pas qu'il perde ses armes
+    if isinstance(user_collections[user_id], list):
+        ancien_inventaire = user_collections[user_id]
+        user_collections[user_id] = {"coins": 0, "inventory": ancien_inventaire}
+        save_data()
+
+# --- COMMANDES ÉCONOMIE ---
+
+# >>> MODIFICATION ICI <<<
+@tree_commands.command(name="daily", description="Récupère 200 pièces chaque minute")
+@app_commands.checks.cooldown(1, 60) # Cooldown de 60 secondes (1 minute)
+async def daily_command(interaction: discord.Interaction):
+    user_id = str(interaction.user.id)
+    check_user_exists(user_id) # On s'assure que le joueur est inscrit
+
+    gain = 200
+    user_collections[user_id]["coins"] += gain
+    save_data()
+
+    embed = discord.Embed(title="💰 Salaire Rapide", description=f"Tu as reçu **{gain} coins** !\nNouveau solde : **{user_collections[user_id]['coins']}** 🪙", color=discord.Color.green())
+    await interaction.response.send_message(embed=embed)
+
+@tree_commands.command(name="work", description="Travaille pour gagner un peu d'argent")
+@app_commands.checks.cooldown(1, 3600) # Cooldown de 1h
+async def work_command(interaction: discord.Interaction):
+    user_id = str(interaction.user.id)
+    check_user_exists(user_id)
+
+    # Gain aléatoire entre 20 et 100
+    salaire = random.randint(20, 100)
+    user_collections[user_id]["coins"] += salaire
+    save_data()
+
+    jobs = ["Tu as tondu la pelouse", "Tu as réparé un robot", "Tu as nettoyé le vaisseau spatial", "Tu as aidé une grand-mère"]
+    job_text = random.choice(jobs)
+
+    await interaction.response.send_message(f"🔨 {job_text} et tu as gagné **{salaire} coins** !")
+
+@tree_commands.command(name="wallet", description="Affiche ton argent")
+async def wallet_command(interaction: discord.Interaction):
+    user_id = str(interaction.user.id)
+    check_user_exists(user_id)
+    
+    argent = user_collections[user_id]["coins"]
+    await interaction.response.send_message(f"👛 Tu as actuellement **{argent} coins**.")
+
+@tree_commands.command(name="sell_last", description="Vend la DERNIÈRE arme que tu as obtenue")
+async def sell_last_command(interaction: discord.Interaction):
+    user_id = str(interaction.user.id)
+    check_user_exists(user_id)
+
+    inventaire = user_collections[user_id]["inventory"]
+
+    if len(inventaire) == 0:
+        await interaction.response.send_message("❌ Tu n'as rien à vendre !")
+        return
+
+    # On récupère le dernier objet (pop enlève le dernier élément de la liste)
+    objet_vendu = inventaire.pop()
+    
+    # Calcul du prix de vente (Valeur de rareté * 50)
+    # Commun = 50, Rare = 100, Epique = 150, Légendaire = 200
+    prix_vente = objet_vendu["value"] * 50
+    
+    user_collections[user_id]["coins"] += prix_vente
+    save_data()
+
+    await interaction.response.send_message(f"🤝 Tu as vendu **{objet_vendu['name']}** pour **{prix_vente} coins** !")
 
 
-#msg interdit
-@client.event
-async def on_message(message):
-        if message.author == client.user:
-             return
+# --- AUTRES COMMANDES ---
+
+@tree_commands.command(name="help_weapon", description="Affiche la liste de toutes les commandes")
+async def help_weapon_command(interaction: discord.Interaction):
+    embed = discord.Embed(title="📚 Aide", color=discord.Color.teal())
+    embed.add_field(name="💰 /daily", value="Gagne 200 coins (toutes les minutes)", inline=False)
+    embed.add_field(name="🔨 /work", value="Travaille pour gagner des coins (toutes les 1h)", inline=False)
+    embed.add_field(name="👛 /wallet", value="Voir ton argent", inline=False)
+    embed.add_field(name="🔫 /generate", value=f"Achète une arme aléatoire (Coût: {PRIX_GENERATE} coins)", inline=False)
+    embed.add_field(name="🤝 /sell_last", value="Vend ta dernière arme pour récupérer de l'argent", inline=False)
+    embed.add_field(name="🎒 /show_collection", value="Affiche ton inventaire", inline=False)
+    # ... autres commandes ...
+    await interaction.response.send_message(embed=embed)
+
+@tree_commands.command(name="generate", description=f"Achète une arme aléatoire ({PRIX_GENERATE} coins)")
+async def generate_command(interaction: discord.Interaction):
+    user_id = str(interaction.user.id) 
+    check_user_exists(user_id)
+
+    # 1. Vérifier si le joueur a assez d'argent
+    solde_joueur = user_collections[user_id]["coins"]
+    if solde_joueur < PRIX_GENERATE:
+        await interaction.response.send_message(f"❌ Tu es pauvre ! Il te faut **{PRIX_GENERATE} coins**. Utilise `/daily` ou `/work`.", ephemeral=True)
+        return
+
+    # 2. On retire l'argent
+    user_collections[user_id]["coins"] -= PRIX_GENERATE
+    
+    # 3. Génération de l'arme (comme avant)
+    arme_choisie = random.choice(WEAPONS_LIST)
+    arme_nom = arme_choisie["nom"]
+    arme_image_url = arme_choisie["image"]
+
+    choix_rarete = random.choices(list(RARITIES.keys()), weights=[50, 30, 15, 5], k=1)[0]
+    valeur_tri = RARITIES[choix_rarete]
+
+    nouvel_objet = {
+        "name": arme_nom,
+        "image": arme_image_url,
+        "rarity": choix_rarete,
+        "value": valeur_tri
+    }
+
+    # 4. Ajout dans l'inventaire
+    # ATTENTION : On ajoute maintenant dans ["inventory"] car la structure a changé
+    user_collections[user_id]["inventory"].append(nouvel_objet)
+
+    save_data() 
+
+    couleur = discord.Color.blue()
+    if choix_rarete == "Légendaire": couleur = discord.Color.gold()
+    elif choix_rarete == "Epique": couleur = discord.Color.purple()
+    elif choix_rarete == "Rare": couleur = discord.Color.green()
+
+    embed = discord.Embed(title="🎁 Drop obtenu !", description=f"Coût : {PRIX_GENERATE} coins", color=couleur)
+    embed.add_field(name="Arme", value=arme_nom, inline=True)
+    embed.add_field(name="Rareté", value=choix_rarete, inline=True)
+    embed.set_image(url=arme_image_url)
+    embed.set_footer(text=f"Solde restant : {user_collections[user_id]['coins']} coins")
+
+    await interaction.response.send_message(embed=embed)
+
+
+@tree_commands.command(name="show_collection", description="Affiche ta collection triée par rareté")
+async def show_collection_command(interaction: discord.Interaction):
+    user_id = str(interaction.user.id)
+    check_user_exists(user_id)
+
+    # On récupère l'inventaire qui est maintenant DANS la clé "inventory"
+    items = user_collections[user_id]["inventory"]
+    solde = user_collections[user_id]["coins"]
+
+    if len(items) == 0:
+        await interaction.response.send_message(f"Tu n'as pas d'armes, mais tu as **{solde} coins** ! Utilise `/generate`.")
+        return
+
+    items_tries = sorted(items, key=lambda x: x['value'], reverse=True)
+
+    description = f"💰 **Porte-monnaie : {solde} coins**\n\n"
+    for item in items_tries:
+        icone = "⚪"
+        if item['rarity'] == "Rare": icone = "🟢"
+        elif item['rarity'] == "Epique": icone = "🟣"
+        elif item['rarity'] == "Légendaire": icone = "🟡"
         
-        #anti insulte
-        words_blacklist = ["francais", "wee"]
+        description += f"{icone} **{item['name']}** ({item['rarity']})\n"
 
-        #recup chaque mot
-        for mot in message.content.split():
-            if mot in words_blacklist: 
-                await message.delete()
-                await message.channel.send("ca va te goumer guette bien")
-                break
+    embed = discord.Embed(title=f"Collection de {interaction.user.name}", description=description, color=discord.Color.orange())
+    
+    if items_tries:
+        meilleure_arme = items_tries[0]
+        embed.set_image(url=meilleure_arme["image"])
+        
+    await interaction.response.send_message(embed=embed)
+
+# --- GESTION DES ERREURS (Pour le cooldown) ---
+@tree_commands.error
+async def on_app_command_error(interaction: discord.Interaction, error: app_commands.AppCommandError):
+    if isinstance(error, app_commands.CommandOnCooldown):
+        # On transforme le temps restant en minutes/heures pour que ce soit lisible
+        temps_restant = int(error.retry_after)
+        if temps_restant > 3600:
+            msg = f"⏳ Doucement ! Reviens dans {temps_restant // 3600} heures."
+        elif temps_restant > 60:
+            msg = f"⏳ Doucement ! Reviens dans {temps_restant // 60} minutes."
+        else:
+            msg = f"⏳ Doucement ! Reviens dans {temps_restant} secondes."
+        
+        await interaction.response.send_message(msg, ephemeral=True)
+    else:
+        print(f"Erreur : {error}")
+
+# --- EVENTS ---
+@client.event
+async def on_ready():
+    await tree_commands.sync()
+    print(f'lancement du bot {client.user}')
+    print("Système économique chargé !")
 
 client.run(os.getenv('DISCORD_TOKEN'))

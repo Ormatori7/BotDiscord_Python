@@ -1,0 +1,25 @@
+{
+    "1249482726667456572": {
+        "coins": 201,
+        "inventory": [
+            {
+                "name": "M4A1",
+                "image": "https://upload.wikimedia.org/wikipedia/commons/4/44/M4A1_ACOG.jpg",
+                "rarity": "Commun",
+                "value": 1
+            },
+            {
+                "name": "M4A1",
+                "image": "https://upload.wikimedia.org/wikipedia/commons/4/44/M4A1_ACOG.jpg",
+                "rarity": "Rare",
+                "value": 2
+            },
+            {
+                "name": "Marteau de Guerre",
+                "image": "https://cdna.artstation.com/p/assets/images/images/014/334/844/large/timothy-ferreira-warhammer-render01.jpg",
+                "rarity": "Commun",
+                "value": 1
+            }
+        ]
+    }
+}
